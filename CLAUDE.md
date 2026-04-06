@@ -37,15 +37,10 @@ appData/backups    → { items: [...], lastModifiedAt }
 userRoles/{uid}    → { email, role, name }
 ```
 
-## Firebase Env Vars (in Vercel + .env.local)
-```
-VITE_FIREBASE_API_KEY=AIzaSyBlfMG3pZ31ELLEZglCMt3uDCcQeAR0PCw
-VITE_FIREBASE_AUTH_DOMAIN=properties-portfolio.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=properties-portfolio
-VITE_FIREBASE_STORAGE_BUCKET=properties-portfolio.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=666384161928
-VITE_FIREBASE_APP_ID=1:666384161928:web:f2151289ea335cce56d33d
-```
+## Firebase Env Vars
+Stored in Vercel (production) and `.env.local` (local dev).
+Never commit these to git. To view them run: `npx vercel env ls production`
+Project ID: `properties-portfolio` | Region: `europe-west1`
 
 ## Key Features
 - Multi-region portfolio dashboard (Dubai AED + Turkey TRY)
