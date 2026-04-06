@@ -1,0 +1,279 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --color-navy: #0B0E11;
+  --color-navy-light: #181A20;
+  --color-card: #1E2329;
+  --color-gold: #FCD535;
+  --color-gold-dark: #F0B90B;
+  --color-emerald: #0ECB81;
+  --color-danger: #F6465D;
+  --color-muted: #848E9C;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #0B0E11;
+  color: #EAECEF;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Binance: clean flat BG — no gradient mesh */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #0B0E11 0%, #101318 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Binance-style card — flat, solid bg, subtle border */
+.glass-card {
+  background: #1E2329;
+  border: 1px solid #2B3139;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: #FCD53540;
+  box-shadow: 0 2px 12px rgba(252, 213, 53, 0.06);
+  transform: translateY(-1px);
+}
+
+/* Binance yellow gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #FCD535 0%, #F0B90B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Pulse animation for expiring badges */
+@keyframes pulse-amber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(252, 213, 53, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(252, 213, 53, 0); }
+}
+
+.pulse-amber {
+  animation: pulse-amber 2s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(246, 70, 93, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(246, 70, 93, 0); }
+}
+
+.pulse-red {
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+/* News ticker scroll */
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
+.animate-ticker {
+  animation: ticker-scroll 25s linear infinite;
+}
+
+.animate-ticker-fx {
+  animation: ticker-scroll 20s linear infinite;
+}
+
+/* Scrollbar styling — Binance dark */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0E11;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2B3139;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #474D57;
+}
+
+/* Recharts tooltip & chart styling */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+  z-index: 50 !important;
+}
+.recharts-default-legend {
+  display: none !important;
+}
+
+/* Modern bars — subtle glow on hover */
+.recharts-bar-rectangle:hover {
+  filter: brightness(1.15) drop-shadow(0 0 4px rgba(255,255,255,0.1));
+  transition: filter 0.2s ease;
+}
+
+.chart-tooltip {
+  background: rgba(22, 26, 31, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(252, 213, 53, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 14px 18px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.03) !important;
+  min-width: 200px;
+}
+
+/* Legacy tooltip support */
+.custom-tooltip {
+  background: rgba(22, 26, 31, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(252, 213, 53, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 14px 18px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  min-width: 200px;
+}
+
+/* ─── THEME SYSTEM ───────────────────────────────────────────────────────── */
+
+:root {
+  --th-text: #EAECEF;
+  --th-text-sec: #848E9C;
+  --th-bg: #2B3139;
+  --th-bg2: #2B313940;
+  --th-bg3: #474D57;
+  --th-border: #2B3139;
+  --th-border-l: #2B313960;
+  --th-border-s: #474D57;
+}
+
+html[data-theme="executive"] {
+  --th-text: #F0E6D3;
+  --th-text-sec: #9CA3AF;
+  --th-bg: rgba(192,168,120,0.08);
+  --th-bg2: rgba(192,168,120,0.12);
+  --th-bg3: rgba(192,168,120,0.20);
+  --th-border: rgba(192,168,120,0.12);
+  --th-border-l: rgba(192,168,120,0.06);
+  --th-border-s: rgba(192,168,120,0.22);
+}
+
+/* Theme-aware utility classes */
+.th-text { color: var(--th-text); }
+.th-text-sec { color: var(--th-text-sec); }
+.th-bg { background-color: var(--th-bg); }
+.th-bg2 { background-color: var(--th-bg2); }
+.th-border { border-color: var(--th-border); }
+.th-border-l { border-color: var(--th-border-l); }
+.th-border-s { border-color: var(--th-border-s); }
+.th-hover:hover { background-color: var(--th-bg2); }
+.th-hover2:hover { background-color: var(--th-bg3); }
+.th-hover-l:hover { background-color: var(--th-bg); }
+.th-hover-t:hover { color: var(--th-text); }
+
+/* ─── EXECUTIVE THEME OVERRIDES ─────────────────────────────────────────── */
+
+html[data-theme="executive"] body {
+  background-color: #0B1426;
+  color: #F0E6D3;
+}
+
+html[data-theme="executive"] body::before {
+  background: linear-gradient(180deg, #0B1426 0%, #0D1A33 100%);
+}
+
+html[data-theme="executive"] .glass-card {
+  background: rgba(18,34,64,0.85);
+  border: 1px solid rgba(192,168,120,0.12);
+}
+
+html[data-theme="executive"] .glass-card:hover {
+  border-color: rgba(212,175,55,0.35);
+  box-shadow: 0 4px 16px rgba(212,175,55,0.06);
+}
+
+html[data-theme="executive"] .gradient-text {
+  background: linear-gradient(135deg, #D4AF37 0%, #C5A55A 50%, #E8D48B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+html[data-theme="executive"] .custom-tooltip,
+html[data-theme="executive"] .chart-tooltip {
+  background: rgba(13, 26, 51, 0.95) !important;
+  border: 1px solid rgba(192,168,120,0.15) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+}
+
+html[data-theme="executive"] ::-webkit-scrollbar-track {
+  background: #0B1426;
+}
+
+html[data-theme="executive"] ::-webkit-scrollbar-thumb {
+  background: #1E3A5F;
+}
+
+html[data-theme="executive"] ::-webkit-scrollbar-thumb:hover {
+  background: #2D5A8E;
+}
+
+/* ─── GLOBAL TEXT OVERFLOW & CONTAINMENT ───────────────────────────────── */
+
+/* Single-line truncation utility */
+.text-clamp-1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multi-line clamp utilities */
+.text-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.text-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Prevent horizontal overflow globally */
+#root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
