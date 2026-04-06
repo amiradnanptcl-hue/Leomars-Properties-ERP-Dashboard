@@ -1325,13 +1325,14 @@ const KPICard = ({ icon: Icon, label, value, prefix = '', suffix = '', color, de
 
 const PropertyCard = ({ property, onClick, onUpdateShops, t, lang, rate, aedRate, legalCases = [], onNavigateToLawyer }) => {
   const days = daysRemaining(property.leaseExpiry);
-  const isExpired = days <= 0;
-  const isNearExpiry = !isExpired && days <= 30;
+  const isVacant = property.tenancyEnded === true;
+  const isExpired = !isVacant && days <= 0;  // Vacant suppresses Expired
+  const isNearExpiry = !isVacant && !isExpired && days <= 30;  // Vacant suppresses Near Expiry
   const hasLegalCase = legalCases.some(c => c.propertyId === property.id && c.status !== 'closed');
   const progress = leaseProgress(property.leaseStart, property.leaseExpiry);
   const color = PROPERTY_COLORS[property.name] || '#00C9A7';
-  const isExpiring = days < 180;
-  const isCritical = isExpired || days < 90;
+  const isExpiring = !isVacant && days < 180;
+  const isCritical = !isVacant && (days <= 0 || days < 90);
   const cur = property.currency || 'TRY';
   const activeRate = cur === 'AED' ? aedRate : rate;
   const hasShops = property.shops && property.shops.length > 0;
@@ -3294,12 +3295,13 @@ const ExportView = ({ properties, onBack, t, lang }) => {
           </div>
           <div className="space-y-1">
             {dxbProps.map(p => {
-              const propExpired = daysRemaining(p.leaseExpiry) <= 0;
-              const propNearExpiry = !propExpired && daysRemaining(p.leaseExpiry) <= 30;
+              const propVacant = p.tenancyEnded === true;
+              const propExpired = !propVacant && daysRemaining(p.leaseExpiry) <= 0;
+              const propNearExpiry = !propVacant && !propExpired && daysRemaining(p.leaseExpiry) <= 30;
               return (
                 <div key={p.id} className="flex items-center gap-2 text-xs th-text-sec">
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: propExpired ? '#F6465D' : PROPERTY_COLORS[p.name] }} />
-                  <span className={`truncate ${propExpired ? 'text-[#F6465D]' : propNearExpiry ? 'text-[#F59E0B]' : ''}`}>{p.name}</span>
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: propVacant ? '#F97316' : propExpired ? '#F6465D' : PROPERTY_COLORS[p.name] }} />
+                  <span className={`truncate ${propVacant ? 'text-[#F97316] font-bold' : propExpired ? 'text-[#F6465D]' : propNearExpiry ? 'text-[#F59E0B]' : ''}`}>{p.name} {propVacant ? `(${t.vacant})` : ''}</span>
                   {propExpired && (
                     <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                       className="text-[8px] font-extrabold uppercase tracking-wider text-[#F6465D] shrink-0">
@@ -3336,12 +3338,13 @@ const ExportView = ({ properties, onBack, t, lang }) => {
           </div>
           <div className="space-y-1">
             {trProps.map(p => {
-              const propExpired = daysRemaining(p.leaseExpiry) <= 0;
-              const propNearExpiry = !propExpired && daysRemaining(p.leaseExpiry) <= 30;
+              const propVacant = p.tenancyEnded === true;
+              const propExpired = !propVacant && daysRemaining(p.leaseExpiry) <= 0;
+              const propNearExpiry = !propVacant && !propExpired && daysRemaining(p.leaseExpiry) <= 30;
               return (
                 <div key={p.id} className="flex items-center gap-2 text-xs th-text-sec">
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: propExpired ? '#F6465D' : PROPERTY_COLORS[p.name] }} />
-                  <span className={`truncate ${propExpired ? 'text-[#F6465D]' : propNearExpiry ? 'text-[#F59E0B]' : ''}`}>{p.name}</span>
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: propVacant ? '#F97316' : propExpired ? '#F6465D' : PROPERTY_COLORS[p.name] }} />
+                  <span className={`truncate ${propVacant ? 'text-[#F97316] font-bold' : propExpired ? 'text-[#F6465D]' : propNearExpiry ? 'text-[#F59E0B]' : ''}`}>{p.name} {propVacant ? `(${t.vacant})` : ''}</span>
                   {propExpired && (
                     <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                       className="text-[8px] font-extrabold uppercase tracking-wider text-[#F6465D] shrink-0">
@@ -3366,14 +3369,22 @@ const ExportView = ({ properties, onBack, t, lang }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         {properties.map(p => {
           const color = PROPERTY_COLORS[p.name] || getPropertyColor(p.name);
-          const propExpired = daysRemaining(p.leaseExpiry) <= 0;
-          const propNearExpiry = !propExpired && daysRemaining(p.leaseExpiry) <= 30;
+          const propVacant = p.tenancyEnded === true;
+          const propExpired = !propVacant && daysRemaining(p.leaseExpiry) <= 0;
+          const propNearExpiry = !propVacant && !propExpired && daysRemaining(p.leaseExpiry) <= 30;
           return (
             <motion.div key={p.id} variants={fadeInUp} initial="hidden" animate="visible"
               className="glass-card p-3 sm:p-4 cursor-pointer group relative overflow-hidden"
               onClick={() => handleExport('single', p, p.name)}
               whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
               <div className="absolute top-1.5 right-1.5 z-10 flex flex-col items-end gap-0.5">
+                {propVacant && (
+                  <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
+                    className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[7px] sm:text-[8px] font-extrabold uppercase tracking-wider"
+                    style={{ background: 'rgba(249,115,22,0.15)', color: '#F97316', border: '1px solid rgba(249,115,22,0.3)' }}>
+                    <Home size={9} /> {t.vacant}
+                  </motion.div>
+                )}
                 {propExpired && (
                   <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                     className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[7px] sm:text-[8px] font-extrabold uppercase tracking-wider"
@@ -3390,7 +3401,7 @@ const ExportView = ({ properties, onBack, t, lang }) => {
                 )}
               </div>
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg shrink-0" style={{ background: propExpired ? 'rgba(246,70,93,0.15)' : `${color}20` }}>
+                <div className="p-2 rounded-lg shrink-0" style={{ background: propVacant ? 'rgba(249,115,22,0.15)' : propExpired ? 'rgba(246,70,93,0.15)' : `${color}20` }}>
                   {p.type === 'commercial' ? <Store size={16} style={{ color: propExpired ? '#F6465D' : color }} /> : <Home size={16} style={{ color: propExpired ? '#F6465D' : color }} />}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -3482,10 +3493,10 @@ const RegionTable = ({ properties: props, title, flag, region, currency, rate, a
               const hasShops = p.shops && p.shops.length > 0;
               const isOpen = expanded[p.id];
               const pDays = daysRemaining(p.leaseExpiry);
-              const pExpired = pDays <= 0;
-              const pNearExpiry = !pExpired && pDays <= 30;
-              const pLegal = legalCases.some(c => c.propertyId === p.id && c.status !== 'closed');
               const pEnded = p.tenancyEnded === true;
+              const pExpired = !pEnded && pDays <= 0;  // Vacant suppresses Expired
+              const pNearExpiry = !pEnded && !pExpired && pDays <= 30;  // Vacant suppresses Near Expiry
+              const pLegal = legalCases.some(c => c.propertyId === p.id && c.status !== 'closed');
               return (
                 <React.Fragment key={p.id}>
                   <tr className="border-b th-border-l th-hover-l transition cursor-pointer"
@@ -4095,7 +4106,7 @@ export default function App() {
                   });
                   return { ...p, _days, _expiredShops: expiredShops };
                 })
-                .filter(p => p._days < 180)
+                .filter(p => p._days < 180 && !p.tenancyEnded)  // Skip vacant properties — they show in vacant alerts instead
                 .sort((a, b) => a._days - b._days)
                 .forEach(p => {
                   const isExpired = p._days <= 0;
@@ -4362,10 +4373,10 @@ export default function App() {
                 <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4">
                   {dxbProps.map(p => {
                     const c = PROPERTY_COLORS[p.name] || getPropertyColor(p.name);
-                    const propExpired = daysRemaining(p.leaseExpiry) <= 0;
-                    const propNearExpiry = !propExpired && daysRemaining(p.leaseExpiry) <= 30;
-                    const propHasCase = legalCases.some(lc => lc.propertyId === p.id && lc.status !== 'closed');
                     const propVacant = p.tenancyEnded === true;
+                    const propExpired = !propVacant && daysRemaining(p.leaseExpiry) <= 0;
+                    const propNearExpiry = !propVacant && !propExpired && daysRemaining(p.leaseExpiry) <= 30;
+                    const propHasCase = legalCases.some(lc => lc.propertyId === p.id && lc.status !== 'closed');
                     return (
                       <span key={p.name} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold transition-all hover:scale-105"
                         style={{ background: propExpired ? 'rgba(246,70,93,0.12)' : propVacant ? 'rgba(249,115,22,0.12)' : propNearExpiry ? 'rgba(245,158,11,0.12)' : `${c}15`, color: propExpired ? '#F6465D' : propVacant ? '#F97316' : propNearExpiry ? '#F59E0B' : c, border: `1px solid ${propExpired ? 'rgba(246,70,93,0.3)' : propVacant ? 'rgba(249,115,22,0.3)' : propNearExpiry ? 'rgba(245,158,11,0.3)' : `${c}25`}` }}>
@@ -4474,10 +4485,10 @@ export default function App() {
               <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4">
                 {trProps.map(p => {
                   const c = PROPERTY_COLORS[p.name] || getPropertyColor(p.name);
-                  const propExpired = daysRemaining(p.leaseExpiry) <= 0;
-                  const propNearExpiry = !propExpired && daysRemaining(p.leaseExpiry) <= 30;
-                  const propHasCase = legalCases.some(lc => lc.propertyId === p.id && lc.status !== 'closed');
                   const propVacant = p.tenancyEnded === true;
+                  const propExpired = !propVacant && daysRemaining(p.leaseExpiry) <= 0;
+                  const propNearExpiry = !propVacant && !propExpired && daysRemaining(p.leaseExpiry) <= 30;
+                  const propHasCase = legalCases.some(lc => lc.propertyId === p.id && lc.status !== 'closed');
                   return (
                     <span key={p.name} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold transition-all hover:scale-105"
                       style={{ background: propExpired ? 'rgba(246,70,93,0.12)' : propVacant ? 'rgba(249,115,22,0.12)' : propNearExpiry ? 'rgba(245,158,11,0.12)' : `${c}15`, color: propExpired ? '#F6465D' : propVacant ? '#F97316' : propNearExpiry ? '#F59E0B' : c, border: `1px solid ${propExpired ? 'rgba(246,70,93,0.3)' : propVacant ? 'rgba(249,115,22,0.3)' : propNearExpiry ? 'rgba(245,158,11,0.3)' : `${c}25`}` }}>
