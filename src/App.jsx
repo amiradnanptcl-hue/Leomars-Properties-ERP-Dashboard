@@ -160,6 +160,14 @@ const T = {
     vacant: 'Vacant',
     tenancyEndedLabel: 'TENANCY ENDED',
     endedOn: 'Ended on',
+    changePassword: 'Change Password',
+    currentPassword: 'Current Password',
+    newPassword: 'New Password',
+    confirmNewPassword: 'Confirm New Password',
+    passwordChanged: 'Password changed successfully!',
+    passwordMismatch: 'New passwords do not match',
+    passwordTooShort: 'Password must be at least 6 characters',
+    updatePassword: 'Update Password',
     existingProperties: 'Existing Properties',
     forReference: 'for reference',
     newTenancyTitle: 'New Tenancy',
@@ -341,6 +349,14 @@ const T = {
     vacant: '空置',
     tenancyEndedLabel: '租约已结束',
     endedOn: '结束于',
+    changePassword: '更改密码',
+    currentPassword: '当前密码',
+    newPassword: '新密码',
+    confirmNewPassword: '确认新密码',
+    passwordChanged: '密码修改成功！',
+    passwordMismatch: '新密码不匹配',
+    passwordTooShort: '密码至少6个字符',
+    updatePassword: '更新密码',
     existingProperties: '现有物业',
     forReference: '仅供参考',
     newTenancyTitle: '新租约',
@@ -1978,6 +1994,117 @@ const LAWYER_DATA = {
 
 const CASE_STATUSES = ['open', 'in_progress', 'pending', 'closed'];
 const CASE_STATUS_COLORS = { open: '#F6465D', in_progress: '#F59E0B', pending: '#845EF7', closed: '#0ECB81' };
+
+// ─── CHANGE PASSWORD VIEW ────────────────────────────────────────────────────
+const ChangePasswordView = ({ onBack, t, lang, userEmail }) => {
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [status, setStatus] = useState(null); // 'success' | 'error'
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus(null);
+    setMessage('');
+
+    if (newPw.length < 6) {
+      setStatus('error');
+      setMessage(t.passwordTooShort);
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setStatus('error');
+      setMessage(t.passwordMismatch);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Re-authenticate then update password
+      const { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } = await import('firebase/auth');
+      const auth = getAuth();
+      const user = auth.currentUser;
+      const credential = EmailAuthProvider.credential(user.email, currentPw);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPw);
+      setStatus('success');
+      setMessage(t.passwordChanged);
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+    } catch (err) {
+      setStatus('error');
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setMessage(lang === 'cn' ? '当前密码不正确' : 'Current password is incorrect');
+      } else if (err.code === 'auth/too-many-requests') {
+        setMessage(lang === 'cn' ? '尝试次数过多，请稍后再试' : 'Too many attempts. Please try again later.');
+      } else {
+        setMessage(lang === 'cn' ? '密码更改失败' : 'Failed to change password. Please try again.');
+      }
+    }
+    setLoading(false);
+  };
+
+  const inputClass = "w-full th-bg border th-border rounded-xl px-4 py-3 th-text text-sm mt-1.5 outline-none focus:ring-1 focus:ring-[#2ec4b6]/40 transition";
+
+  return (
+    <motion.div key="changePassword" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={onBack} className="p-2 rounded-xl th-bg2 th-hover2 transition">
+          <ArrowLeft size={18} className="th-text" />
+        </button>
+        <h2 className="text-lg sm:text-xl font-bold th-text flex items-center gap-2">
+          <ShieldAlert size={20} className="text-[#F97316]" /> {t.changePassword}
+        </h2>
+      </div>
+
+      <div className="glass-card p-6 sm:p-8 max-w-md mx-auto">
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 rounded-2xl bg-[#F97316]/10 flex items-center justify-center mx-auto mb-3">
+            <ShieldAlert size={28} className="text-[#F97316]" />
+          </div>
+          <p className="th-text font-bold text-base">{t.changePassword}</p>
+          <p className="th-text-sec text-xs mt-1">{userEmail}</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-xs font-semibold th-text-sec uppercase tracking-wider">{t.currentPassword}</label>
+            <input type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)}
+              required placeholder="••••••••" className={inputClass} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold th-text-sec uppercase tracking-wider">{t.newPassword}</label>
+            <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
+              required placeholder="••••••••" className={inputClass} />
+          </div>
+          <div>
+            <label className="text-xs font-semibold th-text-sec uppercase tracking-wider">{t.confirmNewPassword}</label>
+            <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
+              required placeholder="••••••••" className={inputClass} />
+          </div>
+
+          {status && (
+            <div className={`p-3 rounded-xl text-sm font-semibold text-center ${
+              status === 'success' ? 'bg-[#2ec4b6]/15 text-[#2ec4b6] border border-[#2ec4b6]/30' : 'bg-[#e63946]/15 text-[#e63946] border border-[#e63946]/30'
+            }`}>
+              {message}
+            </div>
+          )}
+
+          <button type="submit" disabled={loading}
+            className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider transition ${
+              loading ? 'bg-[#F97316]/30 text-[#F97316]/50 cursor-not-allowed' : 'bg-[#F97316] text-white hover:bg-[#F97316]/90'
+            }`}>
+            {loading ? (lang === 'cn' ? '更新中...' : 'Updating...') : t.updatePassword}
+          </button>
+        </form>
+      </div>
+    </motion.div>
+  );
+};
 
 const LawyerContactView = ({ onBack, t, lang, properties, legalCases = [], onSaveCases }) => {
   const L = LAWYER_DATA;
@@ -3780,6 +3907,9 @@ export default function App() {
         ) : view === 'lawyer' ? (
           <LawyerContactView key="lawyer" onBack={() => setView('dashboard')} t={t} lang={lang}
             properties={properties} legalCases={legalCases} onSaveCases={saveLegalCases} />
+        ) : view === 'changePassword' ? (
+          <ChangePasswordView key="changePassword" onBack={() => setView('dashboard')} t={t} lang={lang}
+            userEmail={user?.email || ''} />
         ) : view === 'dubai' ? (
           <motion.div key="dubai" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="flex items-center gap-3 mb-5">
@@ -3900,6 +4030,7 @@ export default function App() {
                         { key: 'export', icon: Download, label: t.exportData, color: '#FCD535' },
                         { key: 'history', icon: History, label: t.history, color: '#845EF7' },
                         { key: 'lawyer', icon: Scale, label: t.lawyer, color: '#F783AC' },
+                        { key: 'changePassword', icon: ShieldAlert, label: t.changePassword, color: '#F97316' },
                       ].map(item => {
                         const isActive = view === item.key;
                         const isHovered = hoveredSidebar === item.key;
