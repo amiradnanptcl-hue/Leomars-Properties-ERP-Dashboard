@@ -1415,9 +1415,13 @@ const PropertyCard = ({ property, onClick, onUpdateShops, t, lang, rate, aedRate
 
       {/* Tenant */}
       <div className="pb-3 mb-3 min-w-0" style={{ borderBottom: `2px solid ${color}25` }}>
-        <div className="flex items-center gap-2 text-xs sm:text-sm th-text-sec min-w-0">
-          <Users size={13} className="shrink-0" />
-          <span className="truncate">{property.tenant}</span>
+        <div className="flex items-center gap-2 text-xs sm:text-sm min-w-0">
+          <Users size={13} className={`shrink-0 ${property.tenancyEnded ? 'text-[#F97316]' : 'th-text-sec'}`} />
+          {property.tenancyEnded ? (
+            <span className="text-[#F97316] font-bold uppercase tracking-wider text-[10px]">{t.vacant}</span>
+          ) : (
+            <span className="truncate th-text-sec">{property.tenant}</span>
+          )}
         </div>
         {property.phone && (
           <div className="flex items-center gap-1.5 text-xs th-text-sec mt-1 min-w-0">
@@ -1696,9 +1700,9 @@ const PropertyDetailView = ({ property, onBack, onSave, onDelete, onNewTenancy, 
             {property.tenancyEnded && (
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
                 style={{ background: 'rgba(249,115,22,0.15)', color: '#F97316', border: '1px solid rgba(249,115,22,0.3)' }}>
-                <UserMinus size={11} />
-                {t.tenancyEndedLabel}
-                {property.tenancyEndDate && <span className="font-normal normal-case ml-1">· {property.tenancyEndDate}</span>}
+                <Home size={11} />
+                {t.vacant}
+                {property.tenancyEndDate && <span className="font-normal normal-case ml-1">· {lang === 'cn' ? '自' : 'since'} {property.tenancyEndDate}</span>}
               </div>
             )}
           </div>
@@ -1707,7 +1711,9 @@ const PropertyDetailView = ({ property, onBack, onSave, onDelete, onNewTenancy, 
               <label className="text-xs th-text-sec">{t.tenant}</label>
               {editing ? <input value={form.tenant} onChange={e => updateField('tenant', e.target.value)}
                 className="w-full th-bg border th-border rounded-lg px-3 py-2 th-text text-sm mt-1" />
-                : <p className="th-text text-sm mt-1 truncate">{property.tenant}</p>}
+                : <p className={`text-sm mt-1 truncate ${property.tenancyEnded ? 'text-[#F97316] font-bold uppercase' : 'th-text'}`}>
+                    {property.tenancyEnded ? t.vacant : property.tenant}
+                  </p>}
             </div>
             <div>
               <label className="text-xs th-text-sec">{t.phone}</label>
@@ -3262,7 +3268,7 @@ const ExportView = ({ properties, onBack, t, lang }) => {
                   <div className={`text-sm font-bold truncate ${propExpired ? 'text-[#F6465D]' : 'th-text'}`}>{p.name}</div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <Flag region={p.region} size={12} />
-                    <span className="text-[10px] th-text-sec truncate">{p.tenant}</span>
+                    <span className={`text-[10px] truncate ${p.tenancyEnded ? 'text-[#F97316] font-bold uppercase' : 'th-text-sec'}`}>{p.tenancyEnded ? t.vacant : p.tenant}</span>
                   </div>
                 </div>
                 <div className={`p-1.5 rounded-lg transition ${exporting === 'single' ? 'bg-[#4DABF7]/20' : 'th-bg group-hover:bg-[#4DABF7]/15'}`}>
@@ -3371,10 +3377,10 @@ const RegionTable = ({ properties: props, title, flag, region, currency, rate, a
                         {pExpired && <span className="text-[7px] sm:text-[8px] px-1 py-0.5 rounded font-bold uppercase text-[#F6465D] bg-[#F6465D]/15 whitespace-nowrap animate-pulse">Expired</span>}
                         {pNearExpiry && <span className="text-[7px] sm:text-[8px] px-1 py-0.5 rounded font-bold uppercase text-[#F59E0B] bg-[#F59E0B]/15 whitespace-nowrap animate-pulse">{t.nearExpiry}</span>}
                         {pLegal && <span className="text-[7px] sm:text-[8px] px-1 py-0.5 rounded font-bold uppercase text-[#0891B2] bg-[#0891B2]/15 whitespace-nowrap animate-pulse">{t.legalCase}</span>}
-                        {pEnded && <span className="text-[7px] sm:text-[8px] px-1 py-0.5 rounded font-bold uppercase text-[#F97316] bg-[#F97316]/15 whitespace-nowrap animate-pulse">{t.endTenancy}</span>}
+                        {pEnded && <span className="text-[7px] sm:text-[8px] px-1 py-0.5 rounded font-bold uppercase text-[#F97316] bg-[#F97316]/15 whitespace-nowrap animate-pulse">{t.vacant}</span>}
                       </div>
                     </td>
-                    <td className="py-2 px-1 sm:px-2 th-text-sec hidden md:table-cell truncate max-w-[140px]">{p.tenant}</td>
+                    <td className={`py-2 px-1 sm:px-2 hidden md:table-cell truncate max-w-[140px] ${pEnded ? 'text-[#F97316] font-bold uppercase text-[10px]' : 'th-text-sec'}`}>{pEnded ? t.vacant : p.tenant}</td>
                     <td className="py-2 px-1 sm:px-2 text-right">
                       <span className="inline-flex flex-col items-end">
                         <span className="th-text font-medium text-[8px] sm:text-xs truncate">{fmtCurr(p.currentYearRent, currency)}</span>
@@ -3985,15 +3991,15 @@ export default function App() {
                   </span>
                 );
               });
-              // Tenancy ended alerts
+              // Vacant property alerts
               properties.filter(p => p.tenancyEnded === true).forEach(p => {
                 allAlerts.push(
                   <span key={`ended-${p.id}`} className="inline-flex items-center gap-1.5 mx-4 sm:mx-6">
-                    <UserMinus size={11} className="text-[#F97316] animate-pulse" />
+                    <Home size={11} className="text-[#F97316] animate-pulse" />
                     <span className="font-bold text-[#F97316]">{p.name}</span>
                     <span className="th-text-sec">—</span>
-                    <span className="font-semibold text-[#F97316] uppercase">{t.tenancyEndedLabel}</span>
-                    {p.tenancyEndDate && <span className="th-text-sec">({p.tenancyEndDate})</span>}
+                    <span className="font-semibold text-[#F97316] uppercase">{t.vacant}</span>
+                    {p.tenancyEndDate && <span className="th-text-sec">({lang === 'cn' ? '自' : 'since'} {p.tenancyEndDate})</span>}
                   </span>
                 );
               });
