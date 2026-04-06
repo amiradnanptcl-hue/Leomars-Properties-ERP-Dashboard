@@ -4,14 +4,42 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0D1117" />
+    <meta name="theme-color" content="#0B0E11" />
     <title>Leomars Properties Portfolio</title>
+    <!-- Preconnect to critical domains for faster loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://firestore.googleapis.com" />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
+    <link rel="preconnect" href="https://apis.google.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <!-- Instant loading splash (shown before React loads) -->
+    <style>
+      body { margin: 0; background: #0B0E11; }
+      #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 9999; background: #0B0E11; }
+      #splash img { width: 64px; height: 64px; border-radius: 16px; animation: sp 1.5s ease-in-out infinite; }
+      #splash p { color: #848E9C; font: 600 12px/1 'Inter', system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; }
+      @keyframes sp { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    </style>
   </head>
   <body>
+    <!-- Pre-React splash: visible instantly, hidden when app mounts -->
+    <div id="splash"><img src="/logo.png" alt=""><p>Loading Portfolio...</p></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Hide splash as soon as React renders anything into #root
+      const obs = new MutationObserver(() => {
+        const root = document.getElementById('root');
+        if (root && root.children.length > 0) {
+          const splash = document.getElementById('splash');
+          if (splash) splash.style.display = 'none';
+          obs.disconnect();
+        }
+      });
+      obs.observe(document.getElementById('root'), { childList: true });
+      // Safety: hide splash after 4 seconds no matter what
+      setTimeout(() => { const s = document.getElementById('splash'); if (s) s.style.display = 'none'; }, 4000);
+    </script>
   </body>
 </html>
