@@ -3495,14 +3495,6 @@ export default function App() {
   // ─── AUTH & FIRESTORE ─────────────────────────────────────────────────────
   const { user, role, userName, loading: authLoading, logout, isAdmin, isViewer } = useAuth();
 
-  // Show login screen if not authenticated
-  if (authLoading) return (
-    <div style={{ minHeight: '100vh', background: '#0B0E11', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#848E9C', fontSize: '14px', fontWeight: 600 }}>Loading...</div>
-    </div>
-  );
-  if (!user) return <LoginScreen />;
-
   // Firestore sync — replaces localStorage for shared data
   const {
     properties: firestoreProperties,
@@ -3536,7 +3528,6 @@ export default function App() {
   useEffect(() => {
     if (!dataLoaded || !user) return;
     if (firestoreProperties === null) {
-      // Try localStorage migration first, fallback to defaults
       const localData = (() => { try { return JSON.parse(localStorage.getItem('leomars_properties')); } catch { return null; } })();
       savePropertiesToFirestore(localData || DEFAULT_PROPERTIES, []);
     }
@@ -3724,6 +3715,14 @@ export default function App() {
   }, [properties, selectedProperty, savePropertiesToFirestore, saveBackupToFirestore]);
 
   const selectProp = (p) => { previousViewRef.current = view; setSelectedProperty(p); setView('detail'); };
+
+  // ─── AUTH GATE (rendered in JSX, not early return, to preserve hooks order) ───
+  if (authLoading) return (
+    <div style={{ minHeight: '100vh', background: '#0B0E11', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: '#848E9C', fontSize: '14px', fontWeight: 600 }}>Loading...</div>
+    </div>
+  );
+  if (!user) return <LoginScreen />;
 
   return (
     <>
