@@ -1373,6 +1373,16 @@ const PropertyCard = ({ property, onClick, onUpdateShops, t, lang, rate, aedRate
     >
       {/* Blinking EXPIRED & Legal Case overlays */}
       <div className="absolute top-2.5 right-2.5 z-20 flex flex-col items-end gap-1">
+        {isVacant && (
+          <motion.div
+            animate={{ opacity: [1, 0.4, 1] }}
+            transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider"
+            style={{ background: 'rgba(249,115,22,0.2)', color: '#F97316', border: '1px solid rgba(249,115,22,0.4)', backdropFilter: 'blur(4px)' }}>
+            <Home size={11} />
+            {t.vacant}
+          </motion.div>
+        )}
         {isExpired && (
           <motion.div
             animate={{ opacity: [1, 0.3, 1] }}
@@ -1458,21 +1468,31 @@ const PropertyCard = ({ property, onClick, onUpdateShops, t, lang, rate, aedRate
 
       {/* Lease Progress */}
       <div className="pb-3 mb-3" style={{ borderBottom: `2px solid ${color}25` }}>
-        <div className="flex justify-between text-xs mb-1">
-          <span className="th-text-sec">{t.leaseProgress}</span>
-          <span className={`truncate ${isExpired ? 'text-[#F6465D] font-bold animate-pulse' : isCritical ? 'text-[#F6465D] font-semibold' : isExpiring ? 'text-[#FCD535] font-semibold' : 'text-[#FCD535]'}`}>
-            {isExpired ? (lang === 'cn' ? '已过期' : 'EXPIRED') : `${days} ${t.daysRemaining}`}
-          </span>
-        </div>
-        <div className="h-1.5 th-bg rounded-full overflow-hidden">
-          <motion.div
-            className="h-full rounded-full"
-            style={{ background: isCritical ? '#F6465D' : isExpiring ? '#FCD535' : '#FCD535' }}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 1.2, ease: 'easeOut' }}
-          />
-        </div>
+        {isVacant ? (
+          <div className="flex items-center gap-2 text-xs">
+            <Home size={12} className="text-[#F97316]" />
+            <span className="text-[#F97316] font-bold uppercase tracking-wider">{t.vacant}</span>
+            {property.tenancyEndDate && <span className="th-text-sec font-normal normal-case">· {lang === 'cn' ? '自' : 'since'} {property.tenancyEndDate}</span>}
+          </div>
+        ) : (
+          <>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="th-text-sec">{t.leaseProgress}</span>
+              <span className={`truncate ${isExpired ? 'text-[#F6465D] font-bold animate-pulse' : isCritical ? 'text-[#F6465D] font-semibold' : isExpiring ? 'text-[#FCD535] font-semibold' : 'text-[#FCD535]'}`}>
+                {isExpired ? (lang === 'cn' ? '已过期' : 'EXPIRED') : `${days} ${t.daysRemaining}`}
+              </span>
+            </div>
+            <div className="h-1.5 th-bg rounded-full overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: isCritical ? '#F6465D' : isExpiring ? '#FCD535' : '#FCD535' }}
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 1.2, ease: 'easeOut' }}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Key Figures — Binance 2×2 Grid */}
@@ -1676,14 +1696,14 @@ const PropertyDetailView = ({ property, onBack, onSave, onDelete, onNewTenancy, 
           <div>
             <div className="flex items-center flex-wrap gap-2.5">
               <h2 className="text-xl sm:text-2xl font-bold th-text truncate max-w-[200px] sm:max-w-none">{property.name}</h2>
-              {daysRemaining(property.leaseExpiry) <= 0 && (
+              {!property.tenancyEnded && daysRemaining(property.leaseExpiry) <= 0 && (
                 <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                   className="flex items-center gap-1 px-2 py-1 rounded-md text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider"
                   style={{ background: 'rgba(246,70,93,0.15)', color: '#F6465D', border: '1px solid rgba(246,70,93,0.3)' }}>
                   <AlertTriangle size={11} /> EXPIRED
                 </motion.div>
               )}
-              {daysRemaining(property.leaseExpiry) > 0 && daysRemaining(property.leaseExpiry) <= 30 && (
+              {!property.tenancyEnded && daysRemaining(property.leaseExpiry) > 0 && daysRemaining(property.leaseExpiry) <= 30 && (
                 <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
                   className="flex items-center gap-1 px-2 py-1 rounded-md text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider"
                   style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
@@ -1771,9 +1791,9 @@ const PropertyDetailView = ({ property, onBack, onSave, onDelete, onNewTenancy, 
               <div className="text-[10px] sm:text-xs th-text-sec truncate">{t.leaseExpiry}</div>
               {editing ? <input type="date" value={form.leaseExpiry} onChange={e => updateField('leaseExpiry', e.target.value)}
                 className="w-full bg-transparent th-text text-sm mt-1 text-center" />
-                : <div className={`text-sm font-medium mt-1 truncate ${daysRemaining(property.leaseExpiry) <= 0 ? 'text-[#F6465D]' : 'th-text'}`}>
+                : <div className={`text-sm font-medium mt-1 truncate ${!property.tenancyEnded && daysRemaining(property.leaseExpiry) <= 0 ? 'text-[#F6465D]' : 'th-text'}`}>
                     {property.leaseExpiry}
-                    {daysRemaining(property.leaseExpiry) <= 0 && (
+                    {!property.tenancyEnded && daysRemaining(property.leaseExpiry) <= 0 && (
                       <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                         className="ml-1.5 text-[8px] font-extrabold uppercase tracking-wider text-[#F6465D]">
                         EXPIRED
