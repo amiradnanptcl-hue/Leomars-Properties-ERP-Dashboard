@@ -1002,7 +1002,7 @@ const exportProperties = async (properties, filename, t) => {
     const cur = p.currency || (p.region === 'dubai' ? 'AED' : 'TRY');
     sumRows.push([
       i + 1, p.name, p.type === 'commercial' ? t.commercial : t.residential,
-      p.region === 'dubai' ? 'Dubai' : 'Turkey', cur, p.tenant, p.phone || '—', p.email || '—',
+      p.region === 'dubai' ? 'Dubai' : 'Turkey', cur, p.tenancyEnded ? 'VACANT' : p.tenant, p.tenancyEnded ? '—' : (p.phone || '—'), p.tenancyEnded ? '—' : (p.email || '—'),
       p.leaseStart, p.leaseExpiry, fmtCur(p.deposit, cur), p.payment,
       fmtCur(p.currentYearRent, cur), fmtCur(p.leaseTotal, cur),
     ]);
@@ -1037,10 +1037,11 @@ const exportProperties = async (properties, filename, t) => {
     rows.push([`Region: ${p.region === 'dubai' ? 'Dubai' : 'Turkey'}`, '', `Currency: ${cur}`, '', `Type: ${p.type === 'commercial' ? t.commercial : t.residential}`]);
     rows.push([]);
     rows.push(['TENANT DETAILS']);
-    rows.push(['Name', p.tenant]);
-    rows.push(['Phone', p.phone || '—']);
-    rows.push(['Email', p.email || '—']);
-    if (p.altContact) rows.push(['Alt Contact', p.altContact]);
+    rows.push(['Name', p.tenancyEnded ? 'VACANT' : p.tenant]);
+    rows.push(['Status', p.tenancyEnded ? `Vacant since ${p.tenancyEndDate || 'N/A'}` : 'Active']);
+    rows.push(['Phone', p.tenancyEnded ? '—' : (p.phone || '—')]);
+    rows.push(['Email', p.tenancyEnded ? '—' : (p.email || '—')]);
+    if (!p.tenancyEnded && p.altContact) rows.push(['Alt Contact', p.altContact]);
     rows.push([]);
     rows.push(['LEASE DETAILS']);
     rows.push(['Lease Start', p.leaseStart]);
@@ -1090,10 +1091,11 @@ const exportSingleProperty = async (property, t) => {
   rows.push(['══════════════════════════════════════']);
   rows.push(['TENANT DETAILS']);
   rows.push(['══════════════════════════════════════']);
-  rows.push(['Tenant Name', p.tenant]);
-  rows.push(['Phone', p.phone || '—']);
-  rows.push(['Email', p.email || '—']);
-  if (p.altContact) rows.push(['Alt Contact', p.altContact]);
+  rows.push(['Tenant Name', p.tenancyEnded ? 'VACANT' : p.tenant]);
+  rows.push(['Status', p.tenancyEnded ? `Vacant since ${p.tenancyEndDate || 'N/A'}` : 'Active']);
+  rows.push(['Phone', p.tenancyEnded ? '—' : (p.phone || '—')]);
+  rows.push(['Email', p.tenancyEnded ? '—' : (p.email || '—')]);
+  if (!p.tenancyEnded && p.altContact) rows.push(['Alt Contact', p.altContact]);
   rows.push([]);
   rows.push(['══════════════════════════════════════']);
   rows.push(['LEASE DETAILS']);
@@ -1439,13 +1441,13 @@ const PropertyCard = ({ property, onClick, onUpdateShops, t, lang, rate, aedRate
             <span className="truncate th-text-sec">{property.tenant}</span>
           )}
         </div>
-        {property.phone && (
+        {!property.tenancyEnded && property.phone && (
           <div className="flex items-center gap-1.5 text-xs th-text-sec mt-1 min-w-0">
             <Phone size={11} className="shrink-0" />
             <span className="truncate">{property.phone}</span>
           </div>
         )}
-        {property.altContact && (
+        {!property.tenancyEnded && property.altContact && (
           <div className="flex items-center gap-1.5 text-xs th-text-sec mt-1 min-w-0">
             <Phone size={11} className="shrink-0" />
             <span className="truncate">{property.altContact}</span>
@@ -1735,9 +1737,9 @@ const PropertyDetailView = ({ property, onBack, onSave, onDelete, onNewTenancy, 
               <label className="text-xs th-text-sec">{t.phone}</label>
               {editing ? <input value={form.phone} onChange={e => updateField('phone', e.target.value)}
                 className="w-full th-bg border th-border rounded-lg px-3 py-2 th-text text-sm mt-1" />
-                : <p className="th-text text-sm mt-1 truncate">{property.phone || '—'}</p>}
+                : <p className="th-text text-sm mt-1 truncate">{property.tenancyEnded ? '—' : (property.phone || '—')}</p>}
             </div>
-            {(property.email || editing) && (
+            {(property.email || editing) && !property.tenancyEnded && (
               <div>
                 <label className="text-xs th-text-sec">{t.email}</label>
                 {editing ? <input value={form.email || ''} onChange={e => updateField('email', e.target.value)}
@@ -1745,7 +1747,7 @@ const PropertyDetailView = ({ property, onBack, onSave, onDelete, onNewTenancy, 
                   : <p className="th-text text-sm mt-1 truncate">{property.email || '—'}</p>}
               </div>
             )}
-            {property.altContact && (
+            {property.altContact && !property.tenancyEnded && (
               <div>
                 <label className="text-xs th-text-sec">{lang === 'cn' ? '备用联系人' : 'Alt Contact'}</label>
                 <p className="th-text text-sm mt-1 truncate">{property.altContact}</p>
@@ -4363,11 +4365,19 @@ export default function App() {
                     const propExpired = daysRemaining(p.leaseExpiry) <= 0;
                     const propNearExpiry = !propExpired && daysRemaining(p.leaseExpiry) <= 30;
                     const propHasCase = legalCases.some(lc => lc.propertyId === p.id && lc.status !== 'closed');
+                    const propVacant = p.tenancyEnded === true;
                     return (
                       <span key={p.name} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold transition-all hover:scale-105"
-                        style={{ background: propExpired ? 'rgba(246,70,93,0.12)' : propNearExpiry ? 'rgba(245,158,11,0.12)' : `${c}15`, color: propExpired ? '#F6465D' : propNearExpiry ? '#F59E0B' : c, border: `1px solid ${propExpired ? 'rgba(246,70,93,0.3)' : propNearExpiry ? 'rgba(245,158,11,0.3)' : `${c}25`}` }}>
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: propExpired ? '#F6465D' : c, boxShadow: `0 0 6px ${propExpired ? 'rgba(246,70,93,0.4)' : `${c}40`}` }} />
+                        style={{ background: propExpired ? 'rgba(246,70,93,0.12)' : propVacant ? 'rgba(249,115,22,0.12)' : propNearExpiry ? 'rgba(245,158,11,0.12)' : `${c}15`, color: propExpired ? '#F6465D' : propVacant ? '#F97316' : propNearExpiry ? '#F59E0B' : c, border: `1px solid ${propExpired ? 'rgba(246,70,93,0.3)' : propVacant ? 'rgba(249,115,22,0.3)' : propNearExpiry ? 'rgba(245,158,11,0.3)' : `${c}25`}` }}>
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: propExpired ? '#F6465D' : propVacant ? '#F97316' : c, boxShadow: `0 0 6px ${propExpired ? 'rgba(246,70,93,0.4)' : propVacant ? 'rgba(249,115,22,0.4)' : `${c}40`}` }} />
                         <span className="truncate max-w-[100px] sm:max-w-none">{p.name}</span>
+                        {propVacant && (
+                          <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
+                            className="ml-0.5 flex items-center gap-0.5 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-[#F97316] cursor-pointer"
+                            onClick={() => selectProp(p)}>
+                            <Home size={9} /> {t.vacant}
+                          </motion.span>
+                        )}
                         {propExpired && (
                           <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                             className="ml-0.5 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-[#F6465D] cursor-pointer"
@@ -4467,11 +4477,19 @@ export default function App() {
                   const propExpired = daysRemaining(p.leaseExpiry) <= 0;
                   const propNearExpiry = !propExpired && daysRemaining(p.leaseExpiry) <= 30;
                   const propHasCase = legalCases.some(lc => lc.propertyId === p.id && lc.status !== 'closed');
+                  const propVacant = p.tenancyEnded === true;
                   return (
                     <span key={p.name} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-semibold transition-all hover:scale-105"
-                      style={{ background: propExpired ? 'rgba(246,70,93,0.12)' : propNearExpiry ? 'rgba(245,158,11,0.12)' : `${c}15`, color: propExpired ? '#F6465D' : propNearExpiry ? '#F59E0B' : c, border: `1px solid ${propExpired ? 'rgba(246,70,93,0.3)' : propNearExpiry ? 'rgba(245,158,11,0.3)' : `${c}25`}` }}>
-                      <span className="w-2 h-2 rounded-full" style={{ background: propExpired ? '#F6465D' : c, boxShadow: `0 0 6px ${propExpired ? 'rgba(246,70,93,0.4)' : `${c}40`}` }} />
+                      style={{ background: propExpired ? 'rgba(246,70,93,0.12)' : propVacant ? 'rgba(249,115,22,0.12)' : propNearExpiry ? 'rgba(245,158,11,0.12)' : `${c}15`, color: propExpired ? '#F6465D' : propVacant ? '#F97316' : propNearExpiry ? '#F59E0B' : c, border: `1px solid ${propExpired ? 'rgba(246,70,93,0.3)' : propVacant ? 'rgba(249,115,22,0.3)' : propNearExpiry ? 'rgba(245,158,11,0.3)' : `${c}25`}` }}>
+                      <span className="w-2 h-2 rounded-full" style={{ background: propExpired ? '#F6465D' : propVacant ? '#F97316' : c, boxShadow: `0 0 6px ${propExpired ? 'rgba(246,70,93,0.4)' : propVacant ? 'rgba(249,115,22,0.4)' : `${c}40`}` }} />
                       {p.name}
+                      {propVacant && (
+                        <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
+                          className="ml-0.5 flex items-center gap-0.5 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-[#F97316] cursor-pointer"
+                          onClick={() => selectProp(p)}>
+                          <Home size={9} /> {t.vacant}
+                        </motion.span>
+                      )}
                       {propExpired && (
                         <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                           className="ml-0.5 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-[#F6465D] cursor-pointer"
