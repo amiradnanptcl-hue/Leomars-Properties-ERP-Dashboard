@@ -3718,8 +3718,10 @@ export default function App() {
 
   // ─── AUTH GATE (rendered in JSX, not early return, to preserve hooks order) ───
   if (authLoading) return (
-    <div style={{ minHeight: '100vh', background: '#0B0E11', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#848E9C', fontSize: '14px', fontWeight: 600 }}>Loading...</div>
+    <div style={{ minHeight: '100vh', background: '#0B0E11', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+      <img src="/logo.png" alt="Leomars" style={{ width: '64px', height: '64px', borderRadius: '16px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+      <div style={{ color: '#848E9C', fontSize: '12px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Loading Portfolio...</div>
+      <style>{`@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
     </div>
   );
   if (!user) return <LoginScreen />;

@@ -12,7 +12,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Safety timeout — if Firebase takes too long, show login screen
+    const timeout = setTimeout(() => setLoading(false), 3000);
+
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      clearTimeout(timeout);
       if (firebaseUser) {
         setUser(firebaseUser);
         try {
@@ -36,7 +40,7 @@ export function AuthProvider({ children }) {
       }
       setLoading(false);
     });
-    return unsub;
+    return () => { unsub(); clearTimeout(timeout); };
   }, []);
 
   const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
