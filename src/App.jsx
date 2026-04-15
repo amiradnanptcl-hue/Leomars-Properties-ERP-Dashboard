@@ -695,6 +695,8 @@ const toUSD = (v, currency, tryRate, aedRate) => {
   return r ? v / r : 0;
 };
 
+const PAYMENT_FREQ_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
 const leaseProgress = (start, end) => {
   const s = new Date(start), e = new Date(end), now = new Date();
   return Math.min(100, Math.max(0, ((now - s) / (e - s)) * 100));
@@ -1838,7 +1840,14 @@ const PropertyDetailView = ({ property, onBack, onSave, onDelete, onNewTenancy, 
                       className="w-24 th-bg border th-border rounded px-2 py-1 th-text text-right text-xs ml-auto block" />
                       : <Dual value={row.perPayment} rate={rate} aedRate={aedRate} currency={cur} size="xs" className="items-end" />}
                   </td>
-                  <td className="py-2 px-2 text-right th-text-sec">{row.numPayments}</td>
+                  <td className="py-2 px-2 text-right th-text-sec">
+                    {editing ? (
+                      <select value={row.numPayments} onChange={e => updateScheduleField(idx, 'numPayments', e.target.value)}
+                        className="w-16 th-bg border th-border rounded px-1 py-1 th-text text-right text-xs ml-auto block">
+                        {PAYMENT_FREQ_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                    ) : row.numPayments}
+                  </td>
                   <td className="py-2 px-2 text-right">
                     <Dual value={row.annual} rate={rate} aedRate={aedRate} currency={cur} size="sm" className="items-end" />
                   </td>
@@ -2790,7 +2799,6 @@ const ConfirmDeleteModal = ({ property, onConfirm, onCancel, t }) => {
 // ─── Add Property View ───────────────────────────────────────────────────────
 
 const YEAR_OPTIONS = Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - 3 + i);
-const PAYMENT_FREQ_OPTIONS = [1, 2, 3, 4, 6, 12];
 
 const AddPropertyView = ({ region: initRegion, onBack, onSave, t, lang }) => {
   const [form, setForm] = useState({
